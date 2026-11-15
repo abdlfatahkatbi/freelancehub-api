@@ -15,6 +15,8 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { CategoriesModule } from './categories/categories.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ProposalsModule } from './proposals/proposals.module';
+import { WalletModule } from './wallet/wallet.module';
+import { DeliveriesModule } from './deliveries/deliveries.module';
 
 @Module({
   imports: [
@@ -42,6 +44,8 @@ import { ProposalsModule } from './proposals/proposals.module';
     CategoriesModule,
     ProjectsModule,
     ProposalsModule,
+    WalletModule,
+    DeliveriesModule,
   ],
   controllers: [AppController],
   providers: [
