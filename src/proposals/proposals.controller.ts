@@ -70,4 +70,13 @@ export class ProposalsController {
   ) {
     return this.proposalsService.remove(user.id, id);
   }
+
+  @Roles(Role.CLIENT)
+  @Post('proposals/:id/accept')
+  accept(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.proposalsService.accept(user.id, id);
+  }
 }
