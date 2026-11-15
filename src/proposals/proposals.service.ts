@@ -104,9 +104,14 @@ export class ProposalsService {
         ? this.normalizeMessage(dto.message)
         : undefined;
 
-    return this.prisma.$transaction(async (tx) =>
-      tx.proposal.update({
-        where: { id },
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.proposal.updateMany({
+        where: {
+          id,
+          freelancerId,
+          status: ProposalStatus.PENDING,
+          project: { status: ProjectStatus.OPEN },
+        },
         data: {
           ...(price !== undefined ? { price } : {}),
           ...(dto.durationDays !== undefined
@@ -114,9 +119,18 @@ export class ProposalsService {
             : {}),
           ...(message !== undefined ? { message } : {}),
         },
+      });
+      if (updated.count === 0) {
+        throw new ConflictException(
+          'Proposal can only be changed while PENDING and the project is OPEN',
+        );
+      }
+
+      return tx.proposal.findUniqueOrThrow({
+        where: { id },
         select: this.proposalSelect,
-      }),
-    );
+      });
+    });
   }
 
   async remove(freelancerId: number, id: number) {
@@ -125,6 +139,122 @@ export class ProposalsService {
 
     await this.prisma.proposal.delete({ where: { id } });
     return { message: 'Proposal deleted successfully' };
+  }
+
+  async accept(clientId: number, proposalId: number) {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const proposal = await tx.proposal.findUnique({
+        where: { id: proposalId },
+        select: {
+          id: true,
+          price: true,
+          freelancerId: true,
+          status: true,
+          project: {
+            select: { id: true, clientId: true, status: true },
+          },
+        },
+        });
+        if (!proposal) {
+          throw new NotFoundException('Proposal not found');
+        }
+        if (proposal.project.clientId !== clientId) {
+          throw new ForbiddenException('You do not own this project');
+        }
+        if (proposal.project.status !== ProjectStatus.OPEN) {
+          throw new ConflictException('Project is no longer OPEN');
+        }
+        if (proposal.status !== ProposalStatus.PENDING) {
+          throw new ConflictException('Proposal is no longer PENDING');
+        }
+
+        const wallet = await tx.wallet.findUnique({
+        where: { userId: clientId },
+        select: { id: true },
+        });
+        if (!wallet) {
+          throw new NotFoundException('Wallet not found');
+        }
+        const deducted = await tx.wallet.updateMany({
+        where: {
+          userId: clientId,
+          balance: { gte: proposal.price },
+        },
+        data: { balance: { decrement: proposal.price } },
+        });
+        if (deducted.count === 0) {
+          throw new BadRequestException('Insufficient balance');
+        }
+
+        const projectLocked = await tx.project.updateMany({
+        where: { id: proposal.project.id, status: ProjectStatus.OPEN },
+        data: { status: ProjectStatus.IN_PROGRESS },
+        });
+        if (projectLocked.count === 0) {
+          throw new ConflictException(
+            'Project was accepted by another proposal',
+          );
+        }
+
+        const updatedWallet = await tx.wallet.findUniqueOrThrow({
+        where: { id: wallet.id },
+        select: { balance: true },
+        });
+        const contract = await tx.contract.create({
+        data: {
+          amount: proposal.price,
+          projectId: proposal.project.id,
+          proposalId: proposal.id,
+          clientId,
+          freelancerId: proposal.freelancerId,
+        },
+        select: {
+          id: true,
+          amount: true,
+          status: true,
+          projectId: true,
+          proposalId: true,
+          clientId: true,
+          freelancerId: true,
+        },
+        });
+        await tx.proposal.update({
+        where: { id: proposal.id },
+        data: { status: ProposalStatus.ACCEPTED },
+        });
+        await tx.proposal.updateMany({
+        where: {
+          projectId: proposal.project.id,
+          id: { not: proposal.id },
+        },
+        data: { status: ProposalStatus.REJECTED },
+        });
+        await tx.transaction.create({
+        data: {
+          walletId: wallet.id,
+          type: 'ESCROW_HOLD',
+          amount: proposal.price.neg(),
+          balanceAfter: updatedWallet.balance,
+          contractId: contract.id,
+        },
+        });
+
+        return contract;
+      }, {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2034'
+      ) {
+        throw new ConflictException(
+          'Proposal changed while it was being accepted; please try again',
+        );
+      }
+      throw error;
+    }
   }
 
   private async ensureFreelancer(freelancerId: number): Promise<void> {
