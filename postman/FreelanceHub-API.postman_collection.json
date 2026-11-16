@@ -1,0 +1,345 @@
+{
+  "info": {
+    "_postman_id": "c0f1d4e5-2f79-4c7f-9f7d-7f6d2fb4d001",
+    "name": "FreelanceHub - Complete API",
+    "description": "Complete manual API collection. Run requests in order and keep the Local environment selected.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "adminToken", "value": "" },
+    { "key": "saraToken", "value": "" },
+    { "key": "ahmedToken", "value": "" },
+    { "key": "laylaToken", "value": "" },
+    { "key": "saraId", "value": "" },
+    { "key": "ahmedId", "value": "" },
+    { "key": "laylaId", "value": "" },
+    { "key": "categoryId", "value": "" },
+    { "key": "projectId", "value": "" },
+    { "key": "proposalId", "value": "" },
+    { "key": "contractProjectId", "value": "" },
+    { "key": "userIdToBan", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1 - Auth",
+      "item": [
+        {
+          "name": "Register Sara - Client",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Sara Client\",\n  \"email\": \"sara.client@example.com\",\n  \"password\": \"SaraPass123!\",\n  \"role\": \"CLIENT\"\n}" },
+            "url": "{{baseUrl}}/auth/register"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Created', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+            "const j = pm.response.json();",
+            "pm.collectionVariables.set('saraToken', j.accessToken);",
+            "pm.collectionVariables.set('saraId', j.user.id);"
+          ] } }]
+        },
+        {
+          "name": "Register Ahmed - Freelancer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Ahmed Freelancer\",\n  \"email\": \"ahmed.freelancer@example.com\",\n  \"password\": \"AhmedPass123!\",\n  \"role\": \"FREELANCER\"\n}" },
+            "url": "{{baseUrl}}/auth/register"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Created', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+            "const j = pm.response.json();",
+            "pm.collectionVariables.set('ahmedToken', j.accessToken);",
+            "pm.collectionVariables.set('ahmedId', j.user.id);"
+          ] } }]
+        },
+        {
+          "name": "Register Layla - Freelancer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Layla Freelancer\",\n  \"email\": \"layla.freelancer@example.com\",\n  \"password\": \"LaylaPass123!\",\n  \"role\": \"FREELANCER\"\n}" },
+            "url": "{{baseUrl}}/auth/register"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Created', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+            "const j = pm.response.json();",
+            "pm.collectionVariables.set('laylaToken', j.accessToken);",
+            "pm.collectionVariables.set('laylaId', j.user.id);"
+          ] } }]
+        },
+        {
+          "name": "Login Admin - Seed user",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}" },
+            "url": "{{baseUrl}}/auth/login"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Logged in', () => pm.response.to.have.status(200));",
+            "pm.collectionVariables.set('adminToken', pm.response.json().accessToken);"
+          ] } }]
+        },
+        {
+          "name": "Get current user - Sara",
+          "request": { "method": "GET", "header": [], "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{saraToken}}", "type": "string" }] }, "url": "{{baseUrl}}/auth/me" }
+        },
+        {
+          "name": "Invalid registration - validation check",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Bad\",\n  \"email\": \"not-an-email\",\n  \"password\": \"123\",\n  \"role\": \"ADMIN\"\n}" },
+            "url": "{{baseUrl}}/auth/register"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Validation rejected', () => pm.response.to.have.status(400));"] } }]
+        }
+      ]
+    },
+    {
+      "name": "2 - Freelancers",
+      "item": [
+        {
+          "name": "Get Ahmed public profile",
+          "request": { "method": "GET", "header": [], "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{saraToken}}", "type": "string" }] }, "url": "{{baseUrl}}/freelancers/{{ahmedId}}" }
+        },
+        {
+          "name": "Update Ahmed profile",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{ahmedToken}}", "type": "string" }] },
+            "body": { "mode": "raw", "raw": "{\n  \"bio\": \"Experienced backend freelancer\",\n  \"hourlyRate\": \"35.00\"\n}" },
+            "url": "{{baseUrl}}/freelancers/me"
+          }
+        },
+        {
+          "name": "Upload Ahmed avatar",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{ahmedToken}}", "type": "string" }] },
+            "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": "" }] },
+            "url": "{{baseUrl}}/freelancers/me/avatar"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 - Admin and Categories",
+      "item": [
+        {
+          "name": "List users",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "url": "{{baseUrl}}/admin/users?page=1&limit=10" }
+        },
+        {
+          "name": "Create category",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "body": { "mode": "raw", "raw": "{ \"name\": \"Design\" }" },
+            "url": "{{baseUrl}}/categories"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "if (pm.response.code === 201) pm.collectionVariables.set('categoryId', pm.response.json().id);"
+          ] } }]
+        },
+        {
+          "name": "List categories",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{saraToken}}", "type": "string" }] }, "url": "{{baseUrl}}/categories" }
+        },
+        {
+          "name": "Update category",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "body": { "mode": "raw", "raw": "{ \"name\": \"Design Updated\" }" },
+            "url": "{{baseUrl}}/categories/{{categoryId}}"
+          }
+        },
+        {
+          "name": "Ban Ahmed",
+          "request": { "method": "PATCH", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "url": "{{baseUrl}}/admin/users/{{ahmedId}}/ban" }
+        },
+        {
+          "name": "Unban Ahmed",
+          "request": { "method": "PATCH", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "url": "{{baseUrl}}/admin/users/{{ahmedId}}/unban" }
+        }
+      ]
+    },
+    {
+      "name": "4 - Wallet",
+      "item": [
+        {
+          "name": "Deposit 300 - Sara",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{saraToken}}", "type": "string" }] },
+            "body": { "mode": "raw", "raw": "{ \"amount\": \"300.00\" }" },
+            "url": "{{baseUrl}}/wallet/deposit"
+          }
+        },
+        {
+          "name": "Get Sara balance",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{saraToken}}", "type": "string" }] }, "url": "{{baseUrl}}/wallet" }
+        },
+        {
+          "name": "Get wallet transactions",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{saraToken}}", "type": "string" }] }, "url": "{{baseUrl}}/wallet/transactions?page=1&limit=10" }
+        }
+      ]
+    },
+    {
+      "name": "5 - Projects",
+      "item": [
+        {
+          "name": "Create project - Sara",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{saraToken}}", "type": "string" }] },
+            "body": { "mode": "formdata", "formdata": [
+              { "key": "title", "value": "Logo design", "type": "text" },
+              { "key": "description", "value": "Create a modern logo", "type": "text" },
+              { "key": "categoryId", "value": "{{categoryId}}", "type": "text" },
+              { "key": "budget", "value": "300.00", "type": "text" },
+              { "key": "attachment", "type": "file", "src": "" }
+            ] },
+            "url": "{{baseUrl}}/projects"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "if (pm.response.code === 201) pm.collectionVariables.set('projectId', pm.response.json().id);"
+          ] } }]
+        },
+        {
+          "name": "List projects",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{saraToken}}", "type": "string" }] }, "url": "{{baseUrl}}/projects?page=1&limit=10&sort=newest" }
+        },
+        {
+          "name": "Search and filter projects",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{saraToken}}", "type": "string" }] }, "url": "{{baseUrl}}/projects?page=1&limit=10&categoryId={{categoryId}}&search=logo&sort=budget_desc" }
+        },
+        {
+          "name": "Get my projects",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{saraToken}}", "type": "string" }] }, "url": "{{baseUrl}}/projects/mine?page=1&limit=10" }
+        },
+        {
+          "name": "Get one project",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{saraToken}}", "type": "string" }] }, "url": "{{baseUrl}}/projects/{{projectId}}" }
+        },
+        {
+          "name": "Update project",
+          "request": {
+            "method": "PATCH",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{saraToken}}", "type": "string" }] },
+            "body": { "mode": "formdata", "formdata": [
+              { "key": "title", "value": "Updated logo design", "type": "text" },
+              { "key": "description", "value": "Updated description", "type": "text" },
+              { "key": "budget", "value": "300.00", "type": "text" }
+            ] },
+            "url": "{{baseUrl}}/projects/{{projectId}}"
+          }
+        },
+        {
+          "name": "Download project attachment",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{saraToken}}", "type": "string" }] }, "url": "{{baseUrl}}/projects/{{projectId}}/attachment" }
+        }
+      ]
+    },
+    {
+      "name": "6 - Proposals and Contract",
+      "item": [
+        {
+          "name": "Create proposal - Ahmed",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{ahmedToken}}", "type": "string" }] },
+            "body": { "mode": "raw", "raw": "{ \"price\": \"200.00\", \"durationDays\": 7, \"message\": \"I can deliver this project.\" }" },
+            "url": "{{baseUrl}}/projects/{{projectId}}/proposals"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "if (pm.response.code === 201) pm.collectionVariables.set('proposalId', pm.response.json().id);"
+          ] } }]
+        },
+        {
+          "name": "Create proposal - Layla",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{laylaToken}}", "type": "string" }] },
+            "body": { "mode": "raw", "raw": "{ \"price\": \"220.00\", \"durationDays\": 8, \"message\": \"I can help with this project.\" }" },
+            "url": "{{baseUrl}}/projects/{{projectId}}/proposals"
+          }
+        },
+        {
+          "name": "List project proposals - Sara owner",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{saraToken}}", "type": "string" }] }, "url": "{{baseUrl}}/projects/{{projectId}}/proposals" }
+        },
+        {
+          "name": "My proposals - Ahmed",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{ahmedToken}}", "type": "string" }] }, "url": "{{baseUrl}}/proposals/mine?status=PENDING" }
+        },
+        {
+          "name": "Update proposal - Ahmed",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{ahmedToken}}", "type": "string" }] },
+            "body": { "mode": "raw", "raw": "{ \"price\": \"200.00\", \"durationDays\": 6, \"message\": \"Updated proposal message\" }" },
+            "url": "{{baseUrl}}/proposals/{{proposalId}}"
+          }
+        },
+        {
+          "name": "Accept Ahmed proposal - Sara",
+          "request": { "method": "POST", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{saraToken}}", "type": "string" }] }, "url": "{{baseUrl}}/proposals/{{proposalId}}/accept" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "if (pm.response.code === 201) pm.collectionVariables.set('contractProjectId', pm.collectionVariables.get('projectId'));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "7 - Deliveries",
+      "item": [
+        {
+          "name": "Upload delivery - Ahmed",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{ahmedToken}}", "type": "string" }] },
+            "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": "" }] },
+            "url": "{{baseUrl}}/projects/{{contractProjectId}}/delivery"
+          }
+        },
+        {
+          "name": "Download delivery - Sara or Ahmed",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{saraToken}}", "type": "string" }] }, "url": "{{baseUrl}}/projects/{{contractProjectId}}/delivery" }
+        },
+        {
+          "name": "Approve delivery - Sara",
+          "request": { "method": "POST", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{saraToken}}", "type": "string" }] }, "url": "{{baseUrl}}/projects/{{contractProjectId}}/delivery/approve" }
+        }
+      ]
+    },
+    {
+      "name": "8 - Cleanup examples",
+      "item": [
+        {
+          "name": "Delete proposal - Ahmed (only before acceptance)",
+          "request": { "method": "DELETE", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{ahmedToken}}", "type": "string" }] }, "url": "{{baseUrl}}/proposals/{{proposalId}}" }
+        },
+        {
+          "name": "Delete project - owner and OPEN only",
+          "request": { "method": "DELETE", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{saraToken}}", "type": "string" }] }, "url": "{{baseUrl}}/projects/{{projectId}}" }
+        },
+        {
+          "name": "Delete category - admin only and no projects",
+          "request": { "method": "DELETE", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "url": "{{baseUrl}}/categories/{{categoryId}}" }
+        }
+      ]
+    }
+  ]
+}

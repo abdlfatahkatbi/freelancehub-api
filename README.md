@@ -1,124 +1,324 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# FreelanceHub API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+FreelanceHub is a NestJS backend for a freelance marketplace. It provides
+authentication, freelancer profiles, projects, proposals, wallets, contracts,
+deliveries, admin controls, and an escrow-style payment workflow.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Technology stack
 
-## Description
+- NestJS
+- TypeScript
+- Prisma 6
+- PostgreSQL
+- JWT authentication
+- bcrypt password hashing
+- class-validator
+- Swagger
+- Jest and Supertest
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Features
+
+### Authentication
+
+- Register as `CLIENT` or `FREELANCER`.
+- Login with JWT access tokens.
+- Load the user from the database on every authenticated request.
+- Reject banned users immediately.
+- Login rate limit: five attempts per minute per IP.
+
+### Freelancer profiles
+
+- View a public freelancer profile.
+- Update the current freelancer profile.
+- Upload or replace an avatar.
+- Never expose the password or email in the public profile.
+
+### Categories
+
+- List categories with caching.
+- Admin-only create, update, and delete operations.
+- Unique category names.
+- Prevent deleting categories that have projects.
+
+### Projects
+
+- Clients create projects with optional attachments.
+- Paginated project listing.
+- Category filtering.
+- Case-insensitive title search.
+- Sort by newest, budget ascending, or budget descending.
+- Owner-only update and delete while the project is `OPEN`.
+- Authenticated attachment downloads.
+
+### Proposals and contracts
+
+- Freelancers submit one proposal per project.
+- Project owners view proposals for their projects.
+- Freelancers view and filter their own proposals.
+- Freelancers can update or delete only their own `PENDING` proposals while the
+  project is `OPEN`.
+- Clients accept proposals atomically.
+- Accepted proposals create `HELD` contracts.
+- Other proposals become `REJECTED`.
+
+### Wallet and payments
+
+- Every user receives a wallet at registration.
+- Only clients can deposit.
+- Wallet transactions are stored in a ledger.
+- Proposal acceptance deducts the client balance atomically.
+- Delivery approval pays 90% to the freelancer.
+- The remaining amount is recorded as platform commission.
+- Double payment is rejected.
+
+### Deliveries
+
+- Accepted freelancers upload PDF or ZIP deliveries.
+- Deliveries can be replaced while the project is `IN_PROGRESS`.
+- Only the contract client and freelancer can download a delivery.
+- Clients approve deliveries while the contract is `HELD`.
+
+### Administration
+
+- Admin users list users with pagination.
+- Admin users can ban and unban non-admin users.
+- Admin users cannot be banned.
+
+## Requirements
+
+- Node.js
+- npm
+- PostgreSQL
 
 ## Project setup
 
-```bash
-$ npm install
+From the repository root:
+
+```powershell
+npm install
 ```
 
-## Compile and run the project
+Create a `.env` file with a PostgreSQL connection and JWT settings:
 
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```env
+DATABASE_URL="postgresql://postgres:PASSWORD@localhost:5432/freelancehub"
+JWT_SECRET="replace-with-a-long-random-secret"
+JWT_EXPIRES_IN="1d"
+PORT=3000
+ADMIN_EMAIL="admin@example.com"
+ADMIN_PASSWORD="change-this-password"
+ADMIN_NAME="FreelanceHub Admin"
 ```
 
-## Run tests
+Apply the Prisma schema:
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+```powershell
+npx prisma db push
 ```
 
-## Deployment
+Seed the admin user and initial categories:
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+```powershell
+npx prisma db seed
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Run the API
 
-## Observability
+Development:
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
-
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
-
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
-
-To add it to this project:
-
-```bash
-$ npm install @nestjs/observe
+```powershell
+npm run start:dev
 ```
 
-Then follow the [setup guide](https://docs.nestjs.com/observability/overview) - it takes a single import and an app key.
+Normal start:
 
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
+```powershell
+npm run start
+```
 
-## Resources
+Production build:
 
-Check out a few resources that may come in handy when working with NestJS:
+```powershell
+npm run build
+npm run start:prod
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+The API runs at:
 
-## Support
+```text
+http://localhost:3000
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Swagger documentation:
 
-## Stay in touch
+```text
+http://localhost:3000/api/docs
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## API modules
 
-## License
+| Module | Main routes |
+|---|---|
+| Auth | `/auth/register`, `/auth/login`, `/auth/me` |
+| Freelancers | `/freelancers/:id`, `/freelancers/me` |
+| Admin | `/admin/users` |
+| Categories | `/categories` |
+| Projects | `/projects` |
+| Proposals | `/projects/:projectId/proposals`, `/proposals` |
+| Wallet | `/wallet` |
+| Deliveries | `/projects/:projectId/delivery` |
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+All protected routes require:
+
+```text
+Authorization: Bearer <JWT>
+```
+
+## Postman
+
+Import the complete collection:
+
+```text
+postman/FreelanceHub-API.postman_collection.json
+```
+
+Import the local environment:
+
+```text
+postman/FreelanceHub-Local.postman_environment.json
+```
+
+Select the environment named:
+
+```text
+FreelanceHub - Local Complete
+```
+
+Then run the folders in order:
+
+```text
+1 - Auth
+2 - Freelancers
+3 - Admin and Categories
+4 - Wallet
+5 - Projects
+6 - Proposals and Contract
+7 - Deliveries
+```
+
+For complete Postman instructions, read:
+
+```text
+docs/POSTMAN-GUIDE.md
+```
+
+## Testing
+
+Build the project:
+
+```powershell
+npm run build
+```
+
+Run lint:
+
+```powershell
+npm run lint
+```
+
+Run unit tests:
+
+```powershell
+npm run test
+```
+
+## End-to-end acceptance test
+
+The acceptance test follows section 8 of `docs/REQUIREMENTS.md` and verifies:
+
+- Client deposit.
+- Project creation.
+- Proposal creation and duplicate protection.
+- Atomic proposal acceptance.
+- Insufficient balance rollback.
+- Delivery upload and download.
+- Freelancer payout and platform commission.
+- Double-payment protection.
+- Ownership checks.
+- Banned-token rejection.
+- Login rate limiting.
+
+The test file is:
+
+```text
+test/acceptance.e2e-spec.ts
+```
+
+Use a separate PostgreSQL database for tests.
+
+PowerShell:
+
+```powershell
+$env:TEST_DATABASE_URL="postgresql://postgres:PASSWORD@localhost:5432/freelancehub_test"
+$env:DATABASE_URL=$env:TEST_DATABASE_URL
+npx prisma db push
+npm run test:e2e -- --runInBand acceptance.e2e-spec.ts
+```
+
+Run all e2e tests:
+
+```powershell
+npm run test:e2e -- --runInBand
+```
+
+Never point `TEST_DATABASE_URL` at a development or production database. The
+acceptance test cleans the configured test database before and after execution.
+
+For a beginner-friendly explanation, read:
+
+```text
+docs/TESTING-GUIDE.md
+docs/LAST-CHANGE-EXPLANATION.md
+```
+
+## Money and state rules
+
+- Money uses Prisma `Decimal(12,2)`.
+- JavaScript floating-point arithmetic is not used for money.
+- Wallets contain available balance only.
+- Held escrow money is represented by the `Contract`.
+- Project states are `OPEN -> IN_PROGRESS -> COMPLETED`.
+- Proposal states are `PENDING -> ACCEPTED` or `REJECTED`.
+- Contract states are `HELD -> RELEASED`.
+- Money-changing operations use Prisma transactions.
+
+## Security
+
+- Passwords are hashed with bcrypt.
+- Password hashes are never returned.
+- JWT users are reloaded from the database on every request.
+- Banned users are rejected even when using an existing token.
+- Ownership checks are performed in services.
+- DTO validation uses whitelist and forbid-non-whitelisted behavior.
+- File uploads use memory storage, size limits, MIME checks, magic-byte checks,
+  and random UUID filenames.
+- Stored file paths are validated against the uploads directory.
+
+## Out of scope
+
+The current requirements intentionally exclude:
+
+- Real payment gateways.
+- Cancellation and refunds.
+- Freelancer withdrawals.
+- Notifications.
+- Reviews and ratings.
+
+## Repository documentation
+
+```text
+docs/REQUIREMENTS.md
+docs/POSTMAN-GUIDE.md
+docs/TESTING-GUIDE.md
+docs/LAST-CHANGE-EXPLANATION.md
+```
